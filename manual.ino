@@ -4,18 +4,26 @@ int pos = 0 ;
 
 const int sensorMin = 0;     // sensor minimum
 const int sensorMax = 1024;  // sensor maximum
-const int mode = 1;
+int mode = 1;
 const int smokeSensor = A0;
+int nextTurn = 1;
 //flame sensor
-const int flameSensorLeft = A1;//Flame sensor 1 pin
-const int flameSensorRight = A2; // Flame sensor 2 pin
-const int flameSensorAhead = A3; // Flame sensor 3 pin
+const int flameSensormoveLeft = A3;//Flame sensor 1 pin
+const int flameSensorRight = A4; // Flame sensor 2 pin
+const int flameSensorAhead = A5; // Flame sensor 3 pin
 const int threshold = 1000;
 //
-const int trig = 7;             // Ultrasonic sensor trig pin
-const int echo = 6;
-
+const int obs1Trigger = A0;             // Ahead
+const int obs1Echo = 11;
+const int obs2Trigger = A1;             // moveLeft
+const int obs2Echo = 12;
+const int obs3Trigger = A2;             // Right
+const int obs3Echo = 13;
 int flag = 0;
+
+const int rightDelay = 460 ;
+const int leftDelay = 440;
+
 char incomingValue = 0;
 
 int servoPosTop = 0;
@@ -41,8 +49,12 @@ void setup() {
 
 
   //ultrasonic
-  pinMode(trig, OUTPUT);
-  pinMode(echo, INPUT);
+  pinMode(obs1Trigger, OUTPUT);
+  pinMode(obs1Echo, INPUT);
+  pinMode(obs2Trigger, OUTPUT);
+  pinMode(obs2Echo, INPUT);
+  pinMode(obs3Trigger, OUTPUT);
+  pinMode(obs3Echo, INPUT);
 
   servoT.attach(9);  // Pin 9 for servo X-axis
   servoB.attach(10); // Pin 10 for servo Y-axis
@@ -53,7 +65,7 @@ void setup() {
   pinMode(motorPin3, OUTPUT);
   pinMode(motorPin4, OUTPUT);
   pinMode(enablePinB, OUTPUT);
-
+  servoB.detach();
   pinMode(Relay, OUTPUT);
 }
 
@@ -94,7 +106,7 @@ void processBluetoothCommand() {
         moveBackward();
         break;
       case '3':
-        Serial.println("Left");
+        Serial.println("moveLeft");
         moveLeft();
         break;
       case '4':
@@ -137,51 +149,166 @@ void processBluetoothCommand() {
   delay(10);
 }
 void automatic() {
-  int flameReadingLeft = analogRead(flameSensorLeft);
-  int flameReadingRight = analogRead(flameSensorRight);
-  int flameReadingAhead = analogRead(flameSensorAhead);
+  if (obstacleAhead())
+  {
+    stopMotors();
+    Serial.println("Brake in obstacle Ahead");
+    if (obstacleRight() && !obstacleLeft()) {
+      Serial.println("#1");
+      //moveLeft();
+      moveLeft();
+      delay(leftDelay);
+      moveForward();
+      delay(400);
+      stopMotors();
+      Serial.println("brake in case #1");
+      if (obstacleRight())
+      {
+        moveLeft();
+        delay(leftDelay);
+        nextTurn = 1;
+      }
+      else {
+        moveRight();
+        delay(rightDelay);
+      }
+      //nextTurn=1;
+      //delay(7000);
+    }
+    else if (obstacleLeft() && !obstacleRight())
+    {
+      Serial.println("#2");
+      moveRight();
+      delay(rightDelay);
+      //nextTurn=0;
+      moveForward();
+      delay(400);
+      stopMotors();
+      Serial.println("brake in case #2");
 
-  int averageReading = (flameReadingLeft + flameReadingRight + flameReadingAhead) / 3;
-
-  if (averageReading < threshold) {
-    //    Serial.println("Fire detected!");
-    Serial.print("Flame Sensor left: ");
-    Serial.print(flameReadingLeft);
-    Serial.print(", Sensor right: ");
-    Serial.print(flameReadingRight);
-    Serial.print(", Sensor ahead: ");
-    Serial.println(flameReadingAhead);
-
-    // Perform actions for firefighting robot (e.g., activate water pump, move to extinguish fire)
-    // Add your firefighting robot control logic here.
-
-  } else {
-    Serial.println("No fire detected.");
+      if (obstacleLeft())
+      {
+        Serial.println("#2-1");
+        moveRight();
+        delay(rightDelay);
+        nextTurn = 0;
+      }
+      else {
+        Serial.println("#2-2");
+        moveLeft();
+        delay(leftDelay);
+      }
+      //delay(2400);
+    }
+    else if (obstacleLeft() && obstacleRight())
+    {
+      Serial.println("#3");
+      moveBackward();
+      delay(1000);
+      if (obstacleRight())
+      {
+        moveLeft();
+        delay(leftDelay);
+        moveForward();
+        delay(500);
+        moveRight();
+        delay(rightDelay);
+      }
+      else if (obstacleLeft())
+      {
+        moveRight();
+        delay(rightDelay);
+        moveForward();
+        delay(500);
+        moveLeft();
+        delay(leftDelay);
+      }
+    }
+    else
+    {
+      if (nextTurn == 1) {
+        Serial.println("#4");
+        moveRight();
+        delay(rightDelay);
+        moveForward();
+        delay(500);
+        stopMotors();
+        Serial.println("brake in case #4");
+        if (obstacleLeft())
+        {
+          Serial.println("#4-1");
+          moveRight();
+          int del = rightDelay;
+          delay(del);
+          nextTurn = 0;
+        }
+        else {
+          Serial.println("#4-2");
+          moveLeft();
+          delay(leftDelay);
+          moveForward();
+          delay(850);
+          stopMotors();
+          moveLeft();
+          delay(leftDelay);
+          moveForward();
+          delay(500);
+          stopMotors();
+          moveRight();
+          delay(rightDelay);
+        }
+      }
+      else if (nextTurn == 0)
+      {
+        Serial.println("#5");
+        moveLeft();
+        delay(leftDelay);
+        moveForward();
+        delay(500);
+        stopMotors();
+        Serial.println("brake in case #5");
+        if (obstacleRight())
+        {
+          Serial.println("#5-1");
+          moveLeft();
+          delay(leftDelay);
+          nextTurn = 1;
+        }
+        else {
+          Serial.println("#5-2");
+          moveRight();
+          delay(rightDelay);
+          moveForward();
+          delay(850);
+          stopMotors();
+          moveRight();
+          delay(rightDelay);
+          moveForward();
+          delay(500);
+          stopMotors();
+          moveLeft();
+          delay(leftDelay);
+        }
+      }
+    }
   }
-  if ( flameReadingRight < 500) {
-    Serial.println("Fire at Right");
-    moveRight();
-    delay(200);
-  } else if (flameReadingLeft < 500) {
-    moveLeft();
-    Serial.println("Fire at left");
-  }
-  else if (flameReadingAhead < 500) {
-    Serial.println("Fire ahead");
+  else {
     moveForward();
+    Serial.println("#4-1");
   }
-  else  Serial.println("No fire");
-  // Ultrasonic distance measurement
-  unsigned long duration;
-  int distance;
-  digitalWrite(trig, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trig, HIGH);
-  delayMicroseconds(5);
-  digitalWrite(trig, LOW);
-  duration = pulseIn(echo, HIGH);
-  distance = duration / 58.2;
 }
+
+long microsecondsToInches(long microseconds)
+{
+  return microseconds / 74 / 2;
+}
+
+long microsecondsToCentimeters(long microseconds)
+{
+  return microseconds / 29 / 2;
+}
+
+
 void incrementServoBPosition(int &pos, Servo & servoB, int limit) {
   pos = pos + 20;
   if (pos > limit) {
@@ -243,12 +370,37 @@ void moveRight() {
 }
 
 void moveForward() {
-  digitalWrite(motorPin1, LOW);
-  digitalWrite(motorPin2, HIGH);
-  digitalWrite(motorPin3, HIGH);
-  digitalWrite(motorPin4, LOW);
-}
+  bool fire1 = fireAhead();
+  bool fire2 = fireLeft();
+  bool fire3 = fireRight();
 
+  analogWrite(obs1Trigger, 0);
+  delayMicroseconds(2);
+
+  analogWrite(obs1Trigger, 255) ;
+  delayMicroseconds(10);
+
+  analogWrite(obs1Trigger, 0) ;
+  long duration, cmMiddle;
+  duration = pulseIn(obs1Echo, HIGH);
+  cmMiddle = microsecondsToCentimeters(duration);
+  Serial.println("obstacle Middle *");
+  Serial.println(cmMiddle);
+  if (cmMiddle <= 19)
+  {
+    stopMotors();
+    Serial.println("Brake in forward()");
+    delay(2000);
+    Serial.println("DELAY OVER");
+    return ;
+  }
+  else {
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, HIGH);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+  }
+}
 void moveBackward() {
   digitalWrite(motorPin1, HIGH);
   digitalWrite(motorPin2, LOW);
@@ -260,6 +412,14 @@ void stopMotors() {
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
+  digitalWrite(motorPin4, LOW);
+}
+void rotate()
+{
+  Serial.println("Rotate");
+  digitalWrite(motorPin1, HIGH);
+  digitalWrite(motorPin2, LOW);
+  digitalWrite(motorPin3, HIGH);
   digitalWrite(motorPin4, LOW);
 }
 
@@ -281,60 +441,250 @@ void sweepServo() {
 ///
 bool fireAhead() {
 
-  int flameReadingLeft = analogRead(flameSensorLeft);
-  int flameReadingRight = analogRead(flameSensorRight);
   int flameReadingAhead = analogRead(flameSensorAhead);
 
-  //int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
-  int averageReading = (flameReadingLeft + flameReadingRight + flameReadingAhead) / 3;
-
-  if (averageReading < threshold) {
-    //    Serial.println("Fire detected!");
-    Serial.print("Flame Sensor left: ");
-    Serial.print(flameReadingLeft);
-    Serial.print(", Sensor right: ");
-    Serial.print(flameReadingRight);
-    Serial.print(", Sensor ahead: ");
-    Serial.println(flameReadingAhead);
-
-    // Perform actions for firefighting robot (e.g., activate water pump, move to extinguish fire)
-    // Add your firefighting robot control logic here.
-
-  } else {
-    Serial.println("No fire detected.");
-  }
-  if ( flameReadingRight < 500) {
-    Serial.println("Fire at Right");
-  } else if (flameReadingLeft < 500)
-    Serial.println("Fire at left");
-  else if (flameReadingAhead < 500)
-    Serial.println("Fire ahead");
-  else  Serial.println("No fire");
-  if (flag == 0) {
-    for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
-      // in steps of 1 degree
-      servoB.write(pos);              // tell servo to go to position in variable 'pos'
-      delay(10);                       // waits 15ms for the servo to reach the position
+  int range = map(flameReadingAhead, sensorMin, sensorMax, 0, 10);
+  Serial.println(flameReadingAhead);
+  Serial.println(range);
+  if (flameReadingAhead <= 45)
+  {
+    Serial.println("Fire Ahead!!!");
+    stopMotors();
+    while (range <= 8)
+    {
+      stopMotors();
+      Serial.println("In the loop");
+      int flameReadingAhead = analogRead(flameSensorAhead);
+      range = map(flameReadingAhead, sensorMin, sensorMax, 0, 10);
+      servoB.attach(10);
+      if (flag == 0) {
+        for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
+          // in steps of 1 degree
+          servoB.write(pos);              // tell servo to go to position in variable 'pos'
+          delay(10);                       // waits 15ms for the servo to reach the position
+        }
+        for (pos = 100; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
+          servoB.write(pos);              // tell servo to go to position in variable 'pos'
+          delay(10);                       // waits 15ms for the servo to reach the position
+          //count++;
+        }
+        flag = 1;
+      }
     }
-    for (pos = 100; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
-      servoB.write(pos);              // tell servo to go to position in variable 'pos'
-      delay(10);                       // waits 15ms for the servo to reach the position
-      //count++;
-    }
-    flag = 1;
+    Serial.println(range);
+
+    flag = 0;
+    ///????
+    servoB.detach();
+    //       myservo.write(100);
+    //      digitalWrite(buzzer, LOW);
+    return true;
+
   }
-  //  Serial.println(range);
-  //  digitalWrite(buzzer, HIGH);
+  else {
+    return false;
+  }
+
 }
-//        stop spraying
-//delay(10000);
-//flag = 0;
-//servoB.detach();
-//       myservo.write(100);
-//digitalWrite(buzzer, LOW);
-//return true;
-//
-//}
-//else {
-//  return false;
-//}
+
+bool fireLeft() {
+  int sensorReading;
+  sensorReading = analogRead(flameSensormoveLeft);
+  int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+  Serial.println(sensorReading);
+  Serial.println(range);
+  if (range <= 6)
+  {
+    Serial.println("Fire moveLeft!!!");
+    stopMotors();
+    moveLeft();
+    delay(leftDelay);
+    stopMotors();
+    moveBackward();
+    delay(450);
+    stopMotors();
+    while (true) {
+      int sensorReading;
+      sensorReading = analogRead(flameSensorAhead);
+      int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+      Serial.println(sensorReading);
+      Serial.println(range);
+      //moveLeft();
+      if (range == 0)
+      {
+        stopMotors();
+        while (range <= 8)
+        {
+          sensorReading = analogRead(flameSensorAhead);
+          range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+          //          start spraying
+          servoB.attach(10);
+          if (flag == 0) {
+            for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
+              // in steps of 1 degree
+              servoB.write(pos);              // tell servo to go to position in variable 'pos'
+              delay(10);                       // waits 15ms for the servo to reach the position
+            }
+            for (pos = 100; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
+              servoB.write(pos);              // tell servo to go to position in variable 'pos'
+              delay(10);                       // waits 15ms for the servo to reach the position
+              //count++;
+            }
+            flag = 1;
+          }
+
+        }
+        //        stop spraying
+        flag = 0;
+        servoB.detach();
+        //            digitalWrite(buzzer, LOW);
+        return true;
+
+      }
+
+    }
+
+  }
+  else
+    return false;
+
+}
+
+/// right
+bool fireRight() {
+  int sensorReading;
+  sensorReading = analogRead(flameSensorRight);
+  int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+  Serial.println(sensorReading);
+  Serial.println(range);
+  if (range <= 6)
+  {
+    Serial.println("Fire Right!!!");
+    stopMotors();
+    moveRight();
+    delay(rightDelay);
+    stopMotors();
+    moveBackward();
+    delay(450);
+    while (true) {
+      int sensorReading1;
+      sensorReading1 = analogRead(flameSensorAhead);
+      int range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
+      Serial.println("Fire ahead");
+      Serial.println(range1);
+      //right();
+      if (range1 == 0)
+      {
+        stopMotors();
+
+        while (range1 <= 8)
+        {
+          moveForward();
+          sensorReading1 = analogRead(flameSensorAhead);
+          range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
+          if (range1 <= 6)
+          {
+            stopMotors();
+            break;
+          }
+        }
+        while (range1 <= 8)
+        {
+          sensorReading1 = analogRead(flameSensorAhead);
+          range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
+          //          start spraying
+          servoB.attach(10);
+          if (flag == 0) {
+            for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
+              // in steps of 1 degree
+              servoB.write(pos);              // tell servo to go to position in variable 'pos'
+              delay(10);                       // waits 15ms for the servo to reach the position
+            }
+            for (pos = 100; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
+              servoB.write(pos);              // tell servo to go to position in variable 'pos'
+              delay(10);                       // waits 15ms for the servo to reach the position
+              //count++;
+            }
+            flag = 1;
+          }
+        }
+        //        stop spraying
+
+        servoB.detach();
+        if (range1 > 7) {
+          stopMotors();
+        }
+        return true;
+      }
+    }
+  }
+  else
+    return false;
+}
+
+//Obstacle
+bool obstacleAhead() {
+  bool fire1 = fireAhead();
+  bool fire2 = fireLeft();
+  bool fire3 = fireRight();
+  analogWrite(obs1Trigger, 0);
+  delayMicroseconds(2);
+  analogWrite(obs1Trigger, 255) ;
+  delayMicroseconds(10);
+  analogWrite(obs1Trigger, 0) ;
+  long duration, cmMiddle;
+  duration = pulseIn(obs1Echo, HIGH);
+  cmMiddle = microsecondsToCentimeters(duration);
+  Serial.println("obstacle Middle");
+  Serial.println(cmMiddle);
+
+
+  if (cmMiddle <= 19)
+  {
+    return true;
+  }
+  return false;
+}
+bool obstacleLeft() {
+  bool fire1 = fireAhead();
+  bool fire2 = fireLeft();
+  bool fire3 = fireRight();
+  analogWrite(obs2Trigger, 0);
+  delayMicroseconds(2);
+  analogWrite(obs2Trigger, 255);
+  delayMicroseconds(10);
+  analogWrite(obs2Trigger, 0);
+  long duration, cmLeft;
+  duration = pulseIn(obs2Echo, HIGH);
+  cmLeft = microsecondsToCentimeters(duration);
+  Serial.println("obstacle moveLeft");
+  Serial.println(cmLeft);
+  if (cmLeft <= 30)
+  {
+    return true;
+  }
+  return false;
+}
+
+
+bool obstacleRight() {
+  bool fire1 = fireAhead();
+  bool fire2 = fireLeft();
+  bool fire3 = fireRight();
+  analogWrite(obs3Trigger, 0);
+  delayMicroseconds(2);
+  analogWrite(obs3Trigger, 255);
+  delayMicroseconds(10);
+  analogWrite(obs3Trigger, 0);
+  long duration, cmRight;
+  duration = pulseIn(obs3Echo, HIGH);
+  cmRight = microsecondsToCentimeters(duration);
+  Serial.println("obstacle Right");
+  Serial.println(cmRight);
+
+  if (cmRight <= 30)
+  {
+    return true;
+  }
+  return false;
+}

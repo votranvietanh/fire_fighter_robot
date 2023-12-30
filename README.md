@@ -1,6 +1,6 @@
 # fire_fighter_robot
 nextTurn = check hiện tại đang rẽ phải ? phải?
-obstacle1 = ahead,obstacle2 = left,obstacle3 = right;
+<space>obstacle1 = ahead,obstacle2 = left,obstacle3 = right;<space>
 ---
 moveForward(): check lửa ở 3 hướng bằng sensor và tính khoảng cách phía trước bằng sensorAhead nếu <19 thì dừng xe và chờ 2s nếu dừng quá 2s thì dừng chương trình.
 explain automatic() 

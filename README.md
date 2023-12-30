@@ -2,7 +2,7 @@
 nextTurn = check hiện tại đang rẽ phải ? phải? <br />
 <space>obstacle1 = ahead,obstacle2 = left,obstacle3 = right;
 ---
-moveForward(): check lửa ở 3 hướng bằng sensor và tính khoảng cách phía trước bằng sensorAhead nếu <19 thì dừng xe và chờ 2s nếu dừng quá 2s thì dừng chương trình.<br />
+- moveForward(): check lửa ở 3 hướng bằng sensor và tính khoảng cách phía trước bằng sensorAhead nếu <19 thì dừng xe và chờ 2s nếu dừng quá 2s thì dừng chương trình.<br />
 - Explain automatic()<br />
 => #0: nếu có vật cản phía trước -> dừng xe -> tiếp tục kiểm tra "cản bên phải ko?" và "ko cản bên trái" return TRUE -> đến #1 RẼ TRÁI. <br />
 => vào #1: 

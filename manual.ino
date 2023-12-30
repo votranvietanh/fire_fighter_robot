@@ -172,8 +172,6 @@ void automatic() {
         moveRight();
         delay(rightDelay);
       }
-      //nextTurn=1;
-      //delay(7000);
     }
     else if (obstacleLeft() && !obstacleRight())
     {
@@ -296,6 +294,7 @@ void automatic() {
     moveForward();
     Serial.println("#4-1");
   }
+  delay(1000);
 }
 
 long microsecondsToInches(long microseconds)
@@ -384,7 +383,7 @@ void moveForward() {
   long duration, cmMiddle;
   duration = pulseIn(obs1Echo, HIGH);
   cmMiddle = microsecondsToCentimeters(duration);
-  Serial.println("obstacle Middle *");
+  Serial.print("obstacle Middle *:  ");
   Serial.println(cmMiddle);
   if (cmMiddle <= 19)
   {
@@ -444,9 +443,10 @@ bool fireAhead() {
   int flameReadingAhead = analogRead(flameSensorAhead);
 
   int range = map(flameReadingAhead, sensorMin, sensorMax, 0, 10);
+  Serial.print("flameReadingAhead: ");
   Serial.println(flameReadingAhead);
   Serial.println(range);
-  if (flameReadingAhead <= 45)
+  if (flameReadingAhead <= 50)
   {
     Serial.println("Fire Ahead!!!");
     stopMotors();
@@ -457,6 +457,7 @@ bool fireAhead() {
       int flameReadingAhead = analogRead(flameSensorAhead);
       range = map(flameReadingAhead, sensorMin, sensorMax, 0, 10);
       servoB.attach(10);
+      onPump()
       if (flag == 0) {
         for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
           // in steps of 1 degree
@@ -471,10 +472,12 @@ bool fireAhead() {
         flag = 1;
       }
     }
+    Serial.print("range sau dkien < 8");
     Serial.println(range);
 
     flag = 0;
     ///????
+    offPump()
     servoB.detach();
     //       myservo.write(100);
     //      digitalWrite(buzzer, LOW);
@@ -491,6 +494,7 @@ bool fireLeft() {
   int sensorReading;
   sensorReading = analogRead(flameSensormoveLeft);
   int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+  Serial.print("flameReadingLeft: ");
   Serial.println(sensorReading);
   Serial.println(range);
   if (range <= 6)
@@ -508,6 +512,7 @@ bool fireLeft() {
       sensorReading = analogRead(flameSensorAhead);
       int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
       Serial.println(sensorReading);
+      Serial.println("Fire left");
       Serial.println(range);
       //moveLeft();
       if (range == 0)
@@ -519,6 +524,7 @@ bool fireLeft() {
           range = map(sensorReading, sensorMin, sensorMax, 0, 10);
           //          start spraying
           servoB.attach(10);
+          onPump();
           if (flag == 0) {
             for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
               // in steps of 1 degree
@@ -536,14 +542,13 @@ bool fireLeft() {
         }
         //        stop spraying
         flag = 0;
+        onPump()
         servoB.detach();
         //            digitalWrite(buzzer, LOW);
         return true;
 
       }
-
     }
-
   }
   else
     return false;
@@ -555,6 +560,7 @@ bool fireRight() {
   int sensorReading;
   sensorReading = analogRead(flameSensorRight);
   int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+  Serial.print("flameReadingRight: ");
   Serial.println(sensorReading);
   Serial.println(range);
   if (range <= 6)
@@ -594,6 +600,7 @@ bool fireRight() {
           range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
           //          start spraying
           servoB.attach(10);
+          onPump();
           if (flag == 0) {
             for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
               // in steps of 1 degree
@@ -609,7 +616,7 @@ bool fireRight() {
           }
         }
         //        stop spraying
-
+        onPump()
         servoB.detach();
         if (range1 > 7) {
           stopMotors();
@@ -635,7 +642,7 @@ bool obstacleAhead() {
   long duration, cmMiddle;
   duration = pulseIn(obs1Echo, HIGH);
   cmMiddle = microsecondsToCentimeters(duration);
-  Serial.println("obstacle Middle");
+  Serial.print("obstacle Middle: ");
   Serial.println(cmMiddle);
 
 
@@ -657,7 +664,7 @@ bool obstacleLeft() {
   long duration, cmLeft;
   duration = pulseIn(obs2Echo, HIGH);
   cmLeft = microsecondsToCentimeters(duration);
-  Serial.println("obstacle moveLeft");
+  Serial.print("obstacle Left: ");
   Serial.println(cmLeft);
   if (cmLeft <= 30)
   {
@@ -665,7 +672,6 @@ bool obstacleLeft() {
   }
   return false;
 }
-
 
 bool obstacleRight() {
   bool fire1 = fireAhead();
@@ -679,7 +685,7 @@ bool obstacleRight() {
   long duration, cmRight;
   duration = pulseIn(obs3Echo, HIGH);
   cmRight = microsecondsToCentimeters(duration);
-  Serial.println("obstacle Right");
+  Serial.print("obstacle Right: ");
   Serial.println(cmRight);
 
   if (cmRight <= 30)

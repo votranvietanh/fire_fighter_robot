@@ -3,24 +3,30 @@
 int pos = 0 ;
 
 const int sensorMin = 0;     // sensor minimum
-const int sensorMax = 1024;  // sensor maximum
+const int sensorMax = 865;  // sensor maximum
 int mode = 1;
-const int smokeSensor = A0;
+
 int nextTurn = 1;
 //flame sensor
-const int flameSensormoveLeft = A3;//Flame sensor 1 pin
-const int flameSensorRight = A4; // Flame sensor 2 pin
-const int flameSensorAhead = A5; // Flame sensor 3 pin
-const int threshold = 1000;
-//
-const int obs1Trigger = A0;             // Ahead
-const int obs1Echo = 11;
-const int obs2Trigger = A1;             // moveLeft
-const int obs2Echo = 12;
-const int obs3Trigger = A2;             // Right
-const int obs3Echo = 13;
-int flag = 0;
 
+#define flameSensormoveLeft A1 //Flame sensor 1 pin
+#define flameSensorRight A5 // Flame sensor 2 pin
+#define flameSensorAhead A3 // Flame sensor 3 pin
+
+//
+#define obs1Trigger A0             // left
+#define obs1Echo  6
+#define obs2Trigger  A2           // ahead
+#define obs2Echo  7
+#define obs3Trigger  A4           // Right
+#define obs3Echo  8
+int flag = 0;
+long duration1;
+int distance1;
+long duration2;
+int distance2;
+long duration3;
+int distance3;
 const int rightDelay = 460 ;
 const int leftDelay = 440;
 
@@ -33,7 +39,7 @@ int servoPosBot = 90;
 Servo servoT;  // Servo for X-axis
 Servo servoB;  // Servo for Y-axis
 
-int Relay = 8;
+int Relay = 11;
 // Motor A
 const int motorPin1 = 2;  // Connect to the input pin 1 of the L298N for Motor A
 const int motorPin2 = 3;  // Connect to the input pin 2 of the L298N for Motor A
@@ -56,7 +62,7 @@ void setup() {
   pinMode(obs3Trigger, OUTPUT);
   pinMode(obs3Echo, INPUT);
 
-  servoT.attach(9);  // Pin 9 for servo X-axis
+  servoT.attach(9);  // Pin 9 for servo X-axisa
   servoB.attach(10); // Pin 10 for servo Y-axis
 
   pinMode(motorPin1, OUTPUT);
@@ -65,155 +71,206 @@ void setup() {
   pinMode(motorPin3, OUTPUT);
   pinMode(motorPin4, OUTPUT);
   pinMode(enablePinB, OUTPUT);
-  servoB.detach();
+  //  servoB.detach();
   pinMode(Relay, OUTPUT);
 }
 
 void loop() {
-  if (Serial.available() > 0) //if some date is sent, reads it and saves in state
+  if (Serial.available()) //if some date is sent, reads it and saves in state
   {
     incomingValue = Serial.read();
-  }
+    Serial.println(incomingValue);
+    processBluetoothCommand();
 
-  if (incomingValue == 'A') //Auto
+  }
+  //
+  if (incomingValue == 'M') //Auto
   {
     mode = 1;
   }
-  else if (incomingValue == 'M')   //Manual
+  else if (incomingValue == 'A')   //Manual
   {
     mode = 0;
   }
 
   if (mode == 0) {
     processBluetoothCommand();
+    Serial.print("manual");
   }
   if (mode == 1) {
+
+    //    Serial.println("Automatic");
+    //    int a = analogRead(flameSensormoveLeft);
+    //    int c = analogRead(flameSensorAhead);
+    //    int b = analogRead(flameSensorRight);
+
+
+    //    Serial.println(a);//trai
+    //    Serial.println(c);//giua
+    //    Serial.println(b);//phai
+    //    delay(1000);
+    //
+
+    long aheadDistance = measureDistance(obs1Trigger, obs1Echo);
+    Serial.print("left Distance: ");
+    Serial.print(aheadDistance);
+    Serial.println(" cm");
+
+
+    long moveLeftDistance = measureDistance(obs2Trigger, obs2Echo);
+    Serial.print("ahead: ");
+    Serial.print(moveLeftDistance);
+    Serial.println(" cm");
+
+    long rightDistance = measureDistance(obs3Trigger, obs3Echo);
+    Serial.print("Right Distance: ");
+    Serial.print(rightDistance);
+    Serial.println(" cm");
+
+    Serial.println("____");
+    ////    delay(2000);
     automatic();
   }
+
 }
+long measureDistance(int triggerPin, int echoPin) {
+  digitalWrite(triggerPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(triggerPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(triggerPin, LOW);
 
+  long duration = pulseIn(echoPin, HIGH);
+  long distance = duration * 0.034 / 2;  // Tính khoảng cách dựa trên thời gian và vận tốc âm thanh
 
+  return distance;
+}
 void processBluetoothCommand() {
-  if (Serial.available()) {
-    incomingValue = Serial.read();
-    switch (incomingValue) {
-      case '1':
-        Serial.println("Forward");
-        moveForward();
-        break;
-      case '2':
-        Serial.println("Backward");
-        moveBackward();
-        break;
-      case '3':
-        Serial.println("moveLeft");
-        moveLeft();
-        break;
-      case '4':
-        Serial.println("Right");
-        moveRight();
-        break;
-      case '0':
-        Serial.println("Stop");
-        stopMotors();
-        break;
-      case 'U':
-        Serial.println("U");
-        incrementServoTPosition(servoPosTop, servoT, 180);
-        break;
-      case 'D':
-        Serial.println("D");
-        decrementServoTPosition(servoPosTop, servoT, 0);
-        break;
-      case 'L':
-        Serial.println("L");
-        incrementServoBPosition(servoPosBot, servoB, 180);
-        break;
-      case 'R':
-        Serial.println("R");
-        decrementServoBPosition(servoPosBot, servoB, 0);
-        break;
-      case 'T':
-        Serial.println("Turn on");
-        onPump();
-        break;
-      case 'F':
-        Serial.println("Turn off");
-        offPump();
-        break;
-      default:
-        break;
-    }
 
+  Serial.print("Trong blue");
+  Serial.println(incomingValue);
+  switch (incomingValue) {
+    case '1':
+      Serial.println("Forward-1");
+      moveForward1();
+      break;
+    case '2':
+      moveBackward();
+      break;
+    case '3':
+      Serial.println("moveLeft");
+      moveLeft();
+      break;
+    case '4':
+      moveRight();
+      break;
+    case '0':
+      Serial.println("Stop");
+      stopMotors();
+      break;
+    case 'U':
+      Serial.println("U");
+      incrementServoTPosition(servoPosTop, servoT, 180);
+      break;
+    case 'D':
+      Serial.println("D");
+      decrementServoTPosition(servoPosTop, servoT, 0);
+      break;
+    case 'L':
+      Serial.println("L");
+      incrementServoBPosition(servoPosBot, servoB, 180);
+      break;
+    case 'R':
+      Serial.println("R");
+      decrementServoBPosition(servoPosBot, servoB, 0);
+      break;
+    case 'T':
+      Serial.println("Turn on");
+      onPump();
+      break;
+    case 'F':
+      Serial.println("Turn off");
+      offPump();
+      break;
+    default:
+      break;
   }
-  delay(10);
 }
+
+
+const int MIN_OBSTACLE_DISTANCE = 19;
+const int LEFT_TURN_DELAY = leftDelay;
+const int RIGHT_TURN_DELAY = rightDelay;
+
+void stopAndDelay(int delayTime) {
+  stopMotors();
+  delay(delayTime);
+}
+
+void turnLeft(int delayTime) {
+  moveLeft();
+  delay(delayTime);
+}
+
+void turnRight(int delayTime) {
+  moveRight();
+  delay(delayTime);
+}
+
 void automatic() {
+  
   if (obstacleAhead())
   {
     stopMotors();
     Serial.println("Brake in obstacle Ahead");
-    if (obstacleRight() && !obstacleLeft()) {
-      Serial.println("#1");
-      //moveLeft();
-      moveLeft();
-      delay(leftDelay);
-      moveForward();
-      delay(400);
-      stopMotors();
-      Serial.println("brake in case #1");
-      if (obstacleRight())
-      {
-        moveLeft();
-        delay(leftDelay);
-        nextTurn = 1;
-      }
-      else {
-        moveRight();
-        delay(rightDelay);
-      }
-    }
-    else if (obstacleLeft() && !obstacleRight())
-    {
-      Serial.println("#2");
-      moveRight();
-      delay(rightDelay);
-      //nextTurn=0;
-      moveForward();
-      delay(400);
-      stopMotors();
-      Serial.println("brake in case #2");
 
-      if (obstacleLeft())
-      {
-        Serial.println("#2-1");
-        moveRight();
-        delay(rightDelay);
+    // RẼ TRÁI
+    if (obstacleRight() && !obstacleLeft()) { //  bên phải chặn, bên trái trống -> rẽ trái
+      Serial.println("bên phải chặn, bên trái trống -> rẽ trái");
+      turnLeft(LEFT_TURN_DELAY);
+      moveForward();
+      stopAndDelay(400);
+      if (obstacleRight()) { // bên phải chặn -> rẽ trái
+        turnLeft(LEFT_TURN_DELAY);
+        nextTurn = 1;
+      } else {
+        turnRight(RIGHT_TURN_DELAY);
+      }
+      // RẼ PHẢI
+    } else if (obstacleLeft() && !obstacleRight()) { // BÊN TRÁI BỊ CHẶN, BÊN PHẢI TRỐNG -> RẼ PHẢI
+      Serial.println("BÊN TRÁI BỊ CHẶN, BÊN PHẢI TRỐNG -> RẼ PHẢI");
+      turnRight(RIGHT_TURN_DELAY);
+      moveForward();
+      stopAndDelay(400);
+
+      if (obstacleLeft()) { // TRÁI BỊ CHẶN -> RẼ PHẢI
+        Serial.println("TRÁI BỊ CHẶN -> RẼ PHẢI");
+        turnRight(RIGHT_TURN_DELAY);
         nextTurn = 0;
+      } else {
+        Serial.println("Rẽ trái");
+        turnLeft(LEFT_TURN_DELAY);
       }
-      else {
-        Serial.println("#2-2");
-        moveLeft();
-        delay(leftDelay);
-      }
-      //delay(2400);
-    }
-    else if (obstacleLeft() && obstacleRight())
-    {
-      Serial.println("#3");
+
+      // ĐI LÙI
+    } else if (obstacleLeft() && obstacleRight())
+    { // ĐI VÔ NGÕ HẸP
+      Serial.println("lUI");
       moveBackward();
       delay(1000);
-      if (obstacleRight())
+
+      if (obstacleRight()) // BÊN PHẢI BỊ CHẶN
       {
+        Serial.print("rẽ trái do phải bị chặn");
         moveLeft();
         delay(leftDelay);
         moveForward();
         delay(500);
         moveRight();
         delay(rightDelay);
-      }
-      else if (obstacleLeft())
-      {
+      } else if (obstacleLeft())
+      { // bên trái bị chăn
+        Serial.print("rẽ phải do trái bị chặn");
         moveRight();
         delay(rightDelay);
         moveForward();
@@ -224,89 +281,67 @@ void automatic() {
     }
     else
     {
-      if (nextTurn == 1) {
-        Serial.println("#4");
-        moveRight();
-        delay(rightDelay);
+      if (nextTurn == 1)
+      { // đã vượt qua vật cản bên phải,đã rẽ trái tránh -> rẽ phải đi tiếp
+        turnRight(RIGHT_TURN_DELAY);
         moveForward();
         delay(500);
         stopMotors();
         Serial.println("brake in case #4");
-        if (obstacleLeft())
-        {
+
+        if (obstacleLeft()) {
           Serial.println("#4-1");
-          moveRight();
-          int del = rightDelay;
-          delay(del);
-          nextTurn = 0;
+          turnRight(RIGHT_TURN_DELAY);
+          nextTurn = 0; // trái bị chặn -> rẽ phải -> passed.
+          Serial.println("trái bị chặn -> rẽ phải -> passed.");
         }
-        else {
+        else
+        {
           Serial.println("#4-2");
-          moveLeft();
-          delay(leftDelay);
+          turnLeft(LEFT_TURN_DELAY);
           moveForward();
-          delay(850);
+          stopAndDelay(850);
           stopMotors();
-          moveLeft();
-          delay(leftDelay);
+          turnLeft(LEFT_TURN_DELAY);
           moveForward();
-          delay(500);
+          stopAndDelay(500);
           stopMotors();
-          moveRight();
-          delay(rightDelay);
+          turnRight(RIGHT_TURN_DELAY);
         }
-      }
-      else if (nextTurn == 0)
+      } else if (nextTurn == 0) // rẽ trái đã vượt qua vật cản bên trái
       {
-        Serial.println("#5");
-        moveLeft();
-        delay(leftDelay);
+        Serial.println("#5  rẽ trái đã vượt qua vật cản bên trái");
+        turnLeft(LEFT_TURN_DELAY);
         moveForward();
-        delay(500);
         stopMotors();
         Serial.println("brake in case #5");
-        if (obstacleRight())
-        {
+
+        if (obstacleRight()) {
           Serial.println("#5-1");
           moveLeft();
           delay(leftDelay);
           nextTurn = 1;
-        }
-        else {
+        } else {
           Serial.println("#5-2");
-          moveRight();
-          delay(rightDelay);
+          turnRight(RIGHT_TURN_DELAY);
           moveForward();
-          delay(850);
+          stopAndDelay(850);
           stopMotors();
-          moveRight();
-          delay(rightDelay);
+          turnRight(RIGHT_TURN_DELAY);
           moveForward();
-          delay(500);
+          stopAndDelay(500);
           stopMotors();
-          moveLeft();
-          delay(leftDelay);
+          turnLeft(LEFT_TURN_DELAY);
         }
       }
     }
-  }
-  else {
+  } else
+  {
     moveForward();
-    Serial.println("#4-1");
+    Serial.println("#Không có vật cản-> đi thẳng");
   }
   delay(1000);
 }
-
-long microsecondsToInches(long microseconds)
-{
-  return microseconds / 74 / 2;
-}
-
-long microsecondsToCentimeters(long microseconds)
-{
-  return microseconds / 29 / 2;
-}
-
 
 void incrementServoBPosition(int &pos, Servo & servoB, int limit) {
   pos = pos + 20;
@@ -318,6 +353,7 @@ void incrementServoBPosition(int &pos, Servo & servoB, int limit) {
   delay(15);
 }
 void incrementServoTPosition(int &pos, Servo & servoT, int limit) {
+  Serial.println("Servo tang");
   pos = pos + 20;
   if (pos > limit) {
     pos = limit;
@@ -327,6 +363,7 @@ void incrementServoTPosition(int &pos, Servo & servoT, int limit) {
   delay(15);
 }
 void decrementServoBPosition(int &pos, Servo & servoB, int limit) {
+  Serial.println("Servo giam");
   pos = pos - 20;
   if (pos < limit) {
     pos = limit;
@@ -337,6 +374,7 @@ void decrementServoBPosition(int &pos, Servo & servoB, int limit) {
 
 }
 void decrementServoTPosition(int &pos, Servo & servoT, int limit) {
+
   pos = pos - 20;
   if (pos < limit) {
     pos = limit;
@@ -347,14 +385,16 @@ void decrementServoTPosition(int &pos, Servo & servoT, int limit) {
 }
 void offPump() {
   digitalWrite(Relay, LOW);
+  delay(10);
 }
 
 void onPump() {
   digitalWrite(Relay, HIGH);
+  delay(10);
 }
 
-
 void moveLeft() {
+  Serial.println("hàm rẽ trái ,Left");
   digitalWrite(motorPin1, HIGH);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, HIGH);
@@ -362,45 +402,63 @@ void moveLeft() {
 }
 
 void moveRight() {
+  Serial.println("rẽ phải, hàm,Right");
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, HIGH);
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, HIGH);
 }
 
+const int OBS_TRIGGER = obs2Trigger;
+const int OBS_ECHO = obs2Echo;
+
 void moveForward() {
+  // Check for fire in different directions
+
+
   bool fire1 = fireAhead();
   bool fire2 = fireLeft();
   bool fire3 = fireRight();
 
-  analogWrite(obs1Trigger, 0);
+  // Check for obstacle
+  digitalWrite(OBS_TRIGGER, LOW);
   delayMicroseconds(2);
-
-  analogWrite(obs1Trigger, 255) ;
+  digitalWrite(OBS_TRIGGER, HIGH);
   delayMicroseconds(10);
+  digitalWrite(OBS_TRIGGER, LOW);
 
-  analogWrite(obs1Trigger, 0) ;
-  long duration, cmMiddle;
-  duration = pulseIn(obs1Echo, HIGH);
-  cmMiddle = microsecondsToCentimeters(duration);
-  Serial.print("obstacle Middle *:  ");
+  long duration = pulseIn(OBS_ECHO, HIGH);
+
+  long cmMiddle = duration * 0.034 / 2;;
+
+  Serial.print("Obstacle Middle: ");
   Serial.println(cmMiddle);
-  if (cmMiddle <= 19)
-  {
+
+  if (cmMiddle <= 19) {
     stopMotors();
-    Serial.println("Brake in forward()");
-    delay(2000);
-    Serial.println("DELAY OVER");
-    return ;
-  }
-  else {
+    Serial.println("Stop, Trước có vật cản.");
+    // Consider a non-blocking delay approach if necessary
+    delay(3000);
+    Serial.println("Chờ");
+    return;
+  } else {
+    // Move forward
+    Serial.println("ĐI Thẳng!");
     digitalWrite(motorPin1, LOW);
     digitalWrite(motorPin2, HIGH);
     digitalWrite(motorPin3, HIGH);
     digitalWrite(motorPin4, LOW);
   }
 }
+void moveForward1() {
+  Serial.print("di thang");
+  digitalWrite(motorPin1, LOW);
+  digitalWrite(motorPin2, HIGH);
+  digitalWrite(motorPin3, HIGH);
+  digitalWrite(motorPin4, LOW);
+}
 void moveBackward() {
+  Serial.println("hàm Lui");
   digitalWrite(motorPin1, HIGH);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
@@ -412,6 +470,7 @@ void stopMotors() {
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, LOW);
+  delay(800);
 }
 void rotate()
 {
@@ -438,15 +497,61 @@ void sweepServo() {
   }
 }
 ///
-bool fireAhead() {
+void extinguishFire() {
+  servoB.attach(10);
+  onPump();
+  for (int pos = 90; pos <= 100; pos += 1) {
+    servoB.write(pos);
+    delay(10);
+  }
 
-  int flameReadingAhead = analogRead(flameSensorAhead);
+  for (int pos = 100; pos >= 90; pos -= 1) {
+    servoB.write(pos);
+    delay(10);
+  }
+  offPump();
+  servoB.detach();
+}
 
-  int range = map(flameReadingAhead, sensorMin, sensorMax, 0, 10);
-  Serial.print("flameReadingAhead: ");
-  Serial.println(flameReadingAhead);
+bool fireDetection(int flameSensorPin, int threshold, int rangeThreshold, int moveDelay) {
+  int sensorReading = analogRead(flameSensorPin);
+  int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+
+  Serial.print("flameReading ");
+  Serial.print(" is : ");
+  Serial.println(sensorReading);
   Serial.println(range);
-  if (flameReadingAhead <= 50)
+
+  if (range <= rangeThreshold) {
+    Serial.println("Fire detected!!!");
+
+    stopMotors();
+
+    while (range <= 7) {
+      stopMotors();
+      Serial.println("it's range <= 8");
+      extinguishFire();
+      int newReading = analogRead(flameSensorPin);
+      range = map(newReading, sensorMin, sensorMax, 0, 10);
+    }
+
+    Serial.print("Range after detection < 8: ");
+    Serial.println(range);
+
+    extinguishFire();
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool fireAhead() {
+  int sensorReading;
+  sensorReading = analogRead(flameSensorAhead);
+  int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+  //  Serial.println(sensorReading);
+  //  Serial.println(range);
+  if (sensorReading <= 45)
   {
     Serial.println("Fire Ahead!!!");
     stopMotors();
@@ -454,11 +559,11 @@ bool fireAhead() {
     {
       stopMotors();
       Serial.println("In the loop");
-      int flameReadingAhead = analogRead(flameSensorAhead);
-      range = map(flameReadingAhead, sensorMin, sensorMax, 0, 10);
-      servoB.attach(10);
-      onPump()
+      sensorReading = analogRead(flameSensorAhead);
+      range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+      servoB.attach(9);
       if (flag == 0) {
+        onPump();
         for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
           // in steps of 1 degree
           servoB.write(pos);              // tell servo to go to position in variable 'pos'
@@ -466,21 +571,18 @@ bool fireAhead() {
         }
         for (pos = 100; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
           servoB.write(pos);              // tell servo to go to position in variable 'pos'
+          Serial.println(pos);
           delay(10);                       // waits 15ms for the servo to reach the position
-          //count++;
         }
         flag = 1;
       }
-    }
-    Serial.print("range sau dkien < 8");
-    Serial.println(range);
+      //      Serial.println(range);
 
+    }
+    //        stop spraying
     flag = 0;
-    ///????
-    offPump()
+    offPump();
     servoB.detach();
-    //       myservo.write(100);
-    //      digitalWrite(buzzer, LOW);
     return true;
 
   }
@@ -490,16 +592,16 @@ bool fireAhead() {
 
 }
 
+
 bool fireLeft() {
   int sensorReading;
   sensorReading = analogRead(flameSensormoveLeft);
-  int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
-  Serial.print("flameReadingLeft: ");
-  Serial.println(sensorReading);
-  Serial.println(range);
-  if (range <= 6)
+  int rangeLeft = map(sensorReading, sensorMin, sensorMax, 0, 10);
+  //  Serial.println(sensorReading);
+  //  Serial.println(rangeLeft);
+  if (rangeLeft <= 6)
   {
-    Serial.println("Fire moveLeft!!!");
+    Serial.println("Fire Left!!!");
     stopMotors();
     moveLeft();
     delay(leftDelay);
@@ -509,25 +611,30 @@ bool fireLeft() {
     stopMotors();
     while (true) {
       int sensorReading;
-      sensorReading = analogRead(flameSensorAhead);
-      int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
-      Serial.println(sensorReading);
-      Serial.println("Fire left");
-      Serial.println(range);
-      //moveLeft();
-      if (range == 0)
+      sensorReading = analogRead(flameSensormoveLeft);
+      int rangeLeft = map(sensorReading, sensorMin, sensorMax, 0, 10);
+      //      Serial.println(sensorReading);
+      //      Serial.println("rangeLeft :");
+      //      Serial.println(rangeLeft);
+      //      Serial.println("___");
+
+      delay(500);
+      //left();
+      if (rangeLeft == 0)
       {
         stopMotors();
-        while (range <= 8)
+        while (rangeLeft <= 8)
         {
-          sensorReading = analogRead(flameSensorAhead);
-          range = map(sensorReading, sensorMin, sensorMax, 0, 10);
+          //          Serial.println(sensorReading);
+          //          Serial.println("22rangeLeft :");
+          //          Serial.println(rangeLeft);
+          sensorReading = analogRead(flameSensormoveLeft);
+          rangeLeft = map(sensorReading, sensorMin, sensorMax, 0, 10);
           //          start spraying
-          servoB.attach(10);
           onPump();
+          servoB.attach(9);
           if (flag == 0) {
             for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
-              // in steps of 1 degree
               servoB.write(pos);              // tell servo to go to position in variable 'pos'
               delay(10);                       // waits 15ms for the servo to reach the position
             }
@@ -538,35 +645,35 @@ bool fireLeft() {
             }
             flag = 1;
           }
-
         }
         //        stop spraying
         flag = 0;
-        onPump()
+        offPump();
         servoB.detach();
-        //            digitalWrite(buzzer, LOW);
+
         return true;
 
       }
+
     }
+
   }
   else
     return false;
 
 }
 
-/// right
 bool fireRight() {
   int sensorReading;
   sensorReading = analogRead(flameSensorRight);
   int range = map(sensorReading, sensorMin, sensorMax, 0, 10);
-  Serial.print("flameReadingRight: ");
-  Serial.println(sensorReading);
-  Serial.println(range);
+  //  Serial.println(sensorReading);
+  //  Serial.println(range);
   if (range <= 6)
   {
     Serial.println("Fire Right!!!");
     stopMotors();
+    delay(100);
     moveRight();
     delay(rightDelay);
     stopMotors();
@@ -574,10 +681,11 @@ bool fireRight() {
     delay(450);
     while (true) {
       int sensorReading1;
-      sensorReading1 = analogRead(flameSensorAhead);
+      sensorReading1 = analogRead(flameSensorRight);
       int range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
+      //Serial.println(sensorReading1);
       Serial.println("Fire ahead");
-      Serial.println(range1);
+      //      Serial.println(range1);
       //right();
       if (range1 == 0)
       {
@@ -586,7 +694,7 @@ bool fireRight() {
         while (range1 <= 8)
         {
           moveForward();
-          sensorReading1 = analogRead(flameSensorAhead);
+          sensorReading1 = analogRead(flameSensorRight);
           range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
           if (range1 <= 6)
           {
@@ -596,11 +704,11 @@ bool fireRight() {
         }
         while (range1 <= 8)
         {
-          sensorReading1 = analogRead(flameSensorAhead);
+          sensorReading1 = analogRead(flameSensorRight);
           range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
           //          start spraying
-          servoB.attach(10);
           onPump();
+          servoB.attach(9);
           if (flag == 0) {
             for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
               // in steps of 1 degree
@@ -616,7 +724,7 @@ bool fireRight() {
           }
         }
         //        stop spraying
-        onPump()
+        offPump();
         servoB.detach();
         if (range1 > 7) {
           stopMotors();
@@ -629,68 +737,38 @@ bool fireRight() {
     return false;
 }
 
+
 //Obstacle
-bool obstacleAhead() {
+bool obstacleSensor(String positions, int obsTrigger, int obsEcho, int threshold) {
   bool fire1 = fireAhead();
-  bool fire2 = fireLeft();
   bool fire3 = fireRight();
-  analogWrite(obs1Trigger, 0);
+  bool fire2 = fireLeft();
+
+  digitalWrite(obsTrigger, LOW);
   delayMicroseconds(2);
-  analogWrite(obs1Trigger, 255) ;
+  digitalWrite(obsTrigger, HIGH);
   delayMicroseconds(10);
-  analogWrite(obs1Trigger, 0) ;
-  long duration, cmMiddle;
-  duration = pulseIn(obs1Echo, HIGH);
-  cmMiddle = microsecondsToCentimeters(duration);
-  Serial.print("obstacle Middle: ");
-  Serial.println(cmMiddle);
+  digitalWrite(obsTrigger, LOW);
 
+  long duration = pulseIn(obsEcho, HIGH);
+  long distance = duration * 0.034 / 2;  // Tính khoảng cách dựa trên thời gian và vận tốc âm thanh
 
-  if (cmMiddle <= 19)
-  {
-    return true;
-  }
-  return false;
+  Serial.print("Obstacle distance ");
+  Serial.print(positions);
+  Serial.print(" is ");
+  Serial.println(distance);
+
+  return (distance > threshold);
 }
+
+bool obstacleAhead() {
+  return obstacleSensor("truoc", obs2Trigger, obs2Echo, 26);
+}
+
 bool obstacleLeft() {
-  bool fire1 = fireAhead();
-  bool fire2 = fireLeft();
-  bool fire3 = fireRight();
-  analogWrite(obs2Trigger, 0);
-  delayMicroseconds(2);
-  analogWrite(obs2Trigger, 255);
-  delayMicroseconds(10);
-  analogWrite(obs2Trigger, 0);
-  long duration, cmLeft;
-  duration = pulseIn(obs2Echo, HIGH);
-  cmLeft = microsecondsToCentimeters(duration);
-  Serial.print("obstacle Left: ");
-  Serial.println(cmLeft);
-  if (cmLeft <= 30)
-  {
-    return true;
-  }
-  return false;
+  return obstacleSensor("trai", obs1Trigger, obs1Echo, 30);
 }
 
 bool obstacleRight() {
-  bool fire1 = fireAhead();
-  bool fire2 = fireLeft();
-  bool fire3 = fireRight();
-  analogWrite(obs3Trigger, 0);
-  delayMicroseconds(2);
-  analogWrite(obs3Trigger, 255);
-  delayMicroseconds(10);
-  analogWrite(obs3Trigger, 0);
-  long duration, cmRight;
-  duration = pulseIn(obs3Echo, HIGH);
-  cmRight = microsecondsToCentimeters(duration);
-  Serial.print("obstacle Right: ");
-  Serial.println(cmRight);
-
-  if (cmRight <= 30)
-  {
-    return true;
-  }
-  return false;
+  return obstacleSensor("phai", obs3Trigger, obs3Echo, 30);
 }

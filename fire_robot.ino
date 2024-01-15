@@ -99,17 +99,17 @@ void loop() {
   }
   if (mode == 1) {
 
-    //    Serial.println("Automatic");
-    //    int a = analogRead(flameSensormoveLeft);
-    //    int c = analogRead(flameSensorAhead);
-    //    int b = analogRead(flameSensorRight);
+    Serial.println("Automatic");
+        int a = analogRead(flameSensormoveLeft);
+        int c = analogRead(flameSensorAhead);
+        int b = analogRead(flameSensorRight);
 
 
-    //    Serial.println(a);//trai
-    //    Serial.println(c);//giua
-    //    Serial.println(b);//phai
-    //    delay(1000);
-    //
+        Serial.println(a);//trai
+        Serial.println(c);//giua
+        Serial.println(b);//phai
+        delay(1000);
+    
 
     long aheadDistance = measureDistance(obs1Trigger, obs1Echo);
     Serial.print("left Distance: ");
@@ -127,7 +127,7 @@ void loop() {
     Serial.print(rightDistance);
     Serial.println(" cm");
 
-    Serial.println("____");
+    Serial.println("__");
     ////    delay(2000);
     automatic();
   }
@@ -218,7 +218,6 @@ void turnRight(int delayTime) {
 }
 
 void automatic() {
-  
   if (obstacleAhead())
   {
     stopMotors();
@@ -253,7 +252,8 @@ void automatic() {
       }
 
       // ĐI LÙI
-    } else if (obstacleLeft() && obstacleRight())
+    }
+    else if (obstacleLeft() && obstacleRight())
     { // ĐI VÔ NGÕ HẸP
       Serial.println("lUI");
       moveBackward();
@@ -335,7 +335,20 @@ void automatic() {
         }
       }
     }
-  } else
+  }
+  else if (obstacleRight()&& !obstacleLeft() && !obstacleAhead())
+    { 
+      Serial.println("Có vật thể mạn phải");
+      moveLeft();
+      delay(1000);
+      }
+  else if (obstacleLeft()&& !obstacleRight() && !obstacleAhead())
+    { 
+      Serial.println("Có vật thể mạn trái");
+      moveRight();
+      delay(1000);
+      }
+  else
   {
     moveForward();
     Serial.println("#Không có vật cản-> đi thẳng");
@@ -409,8 +422,8 @@ void moveRight() {
   digitalWrite(motorPin4, HIGH);
 }
 
-const int OBS_TRIGGER = obs2Trigger;
-const int OBS_ECHO = obs2Echo;
+const int OBS_TRIGGER = obs2Trigger; // Ahead only
+const int OBS_ECHO = obs2Echo; 
 
 void moveForward() {
   // Check for fire in different directions
@@ -429,7 +442,7 @@ void moveForward() {
 
   long duration = pulseIn(OBS_ECHO, HIGH);
 
-  long cmMiddle = duration * 0.034 / 2;;
+  long cmMiddle = duration * 0.034 / 2;
 
   Serial.print("Obstacle Middle: ");
   Serial.println(cmMiddle);
@@ -441,9 +454,10 @@ void moveForward() {
     delay(3000);
     Serial.println("Chờ");
     return;
-  } else {
+  } 
+    else {
     // Move forward
-    Serial.println("ĐI Thẳng!");
+    Serial.println("FOWARD");
     digitalWrite(motorPin1, LOW);
     digitalWrite(motorPin2, HIGH);
     digitalWrite(motorPin3, HIGH);
@@ -451,14 +465,14 @@ void moveForward() {
   }
 }
 void moveForward1() {
-  Serial.print("di thang");
+  Serial.print("FOWARD");
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, HIGH);
   digitalWrite(motorPin3, HIGH);
   digitalWrite(motorPin4, LOW);
 }
 void moveBackward() {
-  Serial.println("hàm Lui");
+  Serial.println("Back");
   digitalWrite(motorPin1, HIGH);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
@@ -466,21 +480,13 @@ void moveBackward() {
 }
 
 void stopMotors() {
+  Serial.println("S");
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, LOW);
   delay(800);
 }
-void rotate()
-{
-  Serial.println("Rotate");
-  digitalWrite(motorPin1, HIGH);
-  digitalWrite(motorPin2, LOW);
-  digitalWrite(motorPin3, HIGH);
-  digitalWrite(motorPin4, LOW);
-}
-
 void sweepServo() {
   if (flag == 0) {
     for (pos = 90; pos <= 100; pos += 1) { // goes from 0 degrees to 180 degrees
@@ -554,8 +560,9 @@ bool fireAhead() {
   if (sensorReading <= 45)
   {
     Serial.println("Fire Ahead!!!");
+    Serial.println(sensorReading);
     stopMotors();
-    while (range <= 8)
+    while (range <= 😎
     {
       stopMotors();
       Serial.println("In the loop");
@@ -602,6 +609,7 @@ bool fireLeft() {
   if (rangeLeft <= 6)
   {
     Serial.println("Fire Left!!!");
+    Serial.println(sensorReading);
     stopMotors();
     moveLeft();
     delay(leftDelay);
@@ -616,14 +624,14 @@ bool fireLeft() {
       //      Serial.println(sensorReading);
       //      Serial.println("rangeLeft :");
       //      Serial.println(rangeLeft);
-      //      Serial.println("___");
+      //      Serial.println("_");
 
       delay(500);
       //left();
       if (rangeLeft == 0)
       {
         stopMotors();
-        while (rangeLeft <= 8)
+        while (rangeLeft <= 😎
         {
           //          Serial.println(sensorReading);
           //          Serial.println("22rangeLeft :");
@@ -672,6 +680,7 @@ bool fireRight() {
   if (range <= 6)
   {
     Serial.println("Fire Right!!!");
+    Serial.println(sensorReading);
     stopMotors();
     delay(100);
     moveRight();
@@ -691,7 +700,7 @@ bool fireRight() {
       {
         stopMotors();
 
-        while (range1 <= 8)
+        while (range1 <= 😎
         {
           moveForward();
           sensorReading1 = analogRead(flameSensorRight);
@@ -702,7 +711,7 @@ bool fireRight() {
             break;
           }
         }
-        while (range1 <= 8)
+        while (range1 <= 😎
         {
           sensorReading1 = analogRead(flameSensorRight);
           range1 = map(sensorReading1, sensorMin, sensorMax, 0, 10);
@@ -758,17 +767,17 @@ bool obstacleSensor(String positions, int obsTrigger, int obsEcho, int threshold
   Serial.print(" is ");
   Serial.println(distance);
 
-  return (distance > threshold);
+  return (distance <= threshold);
 }
 
 bool obstacleAhead() {
-  return obstacleSensor("truoc", obs2Trigger, obs2Echo, 26);
+  return obstacleSensor("truoc", obs2Trigger, obs2Echo, 46);
 }
 
 bool obstacleLeft() {
-  return obstacleSensor("trai", obs1Trigger, obs1Echo, 30);
+  return obstacleSensor("trai", obs1Trigger, obs1Echo, 50);
 }
 
 bool obstacleRight() {
-  return obstacleSensor("phai", obs3Trigger, obs3Echo, 30);
+  return obstacleSensor("phai", obs3Trigger, obs3Echo, 50);
 }
